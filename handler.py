@@ -10,7 +10,6 @@ from email.mime.text import MIMEText
 
 import tweepy
 from discord_webhook import DiscordEmbed, DiscordWebhook
-from slack_webhook import Slack
 from telegram import Bot
 
 import config
@@ -52,18 +51,6 @@ def send_alert(data):
             webhook.execute()
         except Exception as e:
             print("[X] Discord Error:\n>", e)
-
-    if config.send_slack_alerts:
-        try:
-            slack = Slack(url="https://hooks.slack.com/services/" + data["slack"])
-            slack.post(text=msg)
-        except KeyError:
-            slack = Slack(
-                url="https://hooks.slack.com/services/" + config.slack_webhook
-            )
-            slack.post(text=msg)
-        except Exception as e:
-            print("[X] Slack Error:\n>", e)
 
     if config.send_twitter_alerts:
         tw_auth = tweepy.OAuthHandler(config.tw_ckey, config.tw_csecret)
