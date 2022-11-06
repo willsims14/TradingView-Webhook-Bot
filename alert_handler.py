@@ -8,7 +8,6 @@ import smtplib
 import ssl
 from email.mime.text import MIMEText
 
-import tweepy
 from discord_webhook import DiscordEmbed, DiscordWebhook
 from telegram import Bot
 
@@ -51,17 +50,6 @@ def send_alert(data):
             webhook.execute()
         except Exception as e:
             print("[X] Discord Error:\n>", e)
-
-    if config.send_twitter_alerts:
-        tw_auth = tweepy.OAuthHandler(config.tw_ckey, config.tw_csecret)
-        tw_auth.set_access_token(config.tw_atoken, config.tw_asecret)
-        tw_api = tweepy.API(tw_auth)
-        try:
-            tw_api.update_status(
-                status=msg.replace("*", "").replace("_", "").replace("`", "")
-            )
-        except Exception as e:
-            print("[X] Twitter Error:\n>", e)
 
     if config.send_email_alerts:
         try:

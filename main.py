@@ -4,13 +4,18 @@
 # File Name             : main.py                 #
 # ----------------------------------------------- #
 
-import json
+import logging
 import time
 
 from flask import Flask, request
 
 import config
-from handler import *
+import alert_handler
+import order_handler
+
+
+logging.basicConfig(filename="main.log", level=logging.DEBUG,
+                    format="%(asctime)s %(levelname)s %(message)s")
 
 app = Flask(__name__)
 
@@ -23,25 +28,25 @@ def get_timestamp():
 @app.route("/webhook", methods=["POST"])
 def webhook():
     # try:
+    dir(request)
+    # logging.info(f'\n(log) Request received: {request.data}')
     if request.method == "POST":
         data = request.get_json()
-        print(data)
         key = data["key"]
         if key == config.sec_key:
-            print(get_timestamp(), "Alert Received & Sent!")
-            send_alert(data)
+            # logging.info(get_timestamp(), "Alert Received & Sent!")
+            alert_handler.send_alert(data)
+            order_handler.submit_order(data)
             return "Sent alert", 200
 
         else:
-            print("[X]", get_timestamp(), "Alert Received & Refused! (Wrong Key)")
+            logging.info("[X]", get_timestamp(), "Alert Received & Refused! (Wrong Key)")
             return "Refused alert", 400
-
     # except Exception as e:
-    #     print("[X]", get_timestamp(), "Error:\n>", e)
+    #     logging.error("[X]", get_timestamp(), "Error:\n>", e)
     #     return "Error", 400
 
 
 if __name__ == "__main__":
     from waitress import serve
-
-    serve(app, host="0.0.0.0", port=80)
+    serve(app, host="0.0.0.0", port=8080)
