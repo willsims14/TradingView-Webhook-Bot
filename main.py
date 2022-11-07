@@ -36,9 +36,8 @@ def webhook():
         if key == config.sec_key:
             # logging.info(get_timestamp(), "Alert Received & Sent!")
             alert_handler.send_alert(data)
-            order_handler.submit_order(data)
+            order_handler.handle_order(data)
             return "Sent alert", 200
-
         else:
             logging.info("[X]", get_timestamp(), "Alert Received & Refused! (Wrong Key)")
             return "Refused alert", 400
