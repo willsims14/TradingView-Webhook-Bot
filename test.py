@@ -33,7 +33,7 @@ order = {
     'price': '16480.00'
 }
 
-# session.place_active_order(**order)
+session.place_active_order(**order)
 # handle_orderbook() will now be called for both inverse and spot data.
 # To keep the data separate, simply create another function and pass it below.
 

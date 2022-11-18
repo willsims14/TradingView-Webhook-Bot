@@ -62,13 +62,19 @@ All alerts can be instantly sent to Telegram, Discord, Twitter and/or Email.
     - Your webhook url would be `http://<YOUR-IP>/webhook`
 1. If you use a firewall be sure to open the corresponding port
 1. Run the bot with `python main.py`
-1. [PM2](https://github.com/fabston/TradingView-Webhook-Bot/issues/28#issuecomment-766301062) can help you in running the app in the background / on system boot. 
+1. [PM2](https://github.com/fabston/TradingView-Webhook-Bot/issues/28#issuecomment-766301062) can help you in running the app in the background / on system boot.
 
 ### Docker
 1. Clone this repository `git clone https://github.com/fabston/TradingView-Webhook-Bot.git`
 1. Edit and update [`config.py`](https://github.com/fabston/TradingView-Webhook-Bot/blob/master/config.py)
 1. `docker-compose build`
 1. `docker-compose up`
+
+### Guincorn
+
+```
+    gunicorn -w 3 main:app --reload
+```
 
 *It is recommended to run flask on a different port like 8080. It is then necessary to forward port 80 to 8080.*
 
