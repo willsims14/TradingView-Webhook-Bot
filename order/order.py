@@ -1,4 +1,4 @@
-
+import logging
 
 
 class Order:
@@ -10,18 +10,19 @@ class Order:
     take_profit = None
     stop_loss = None
 
-    def __init__(self, side, symbol, order_type, qty, price, **kwargs):
+    def __init__(self, side, symbol, order_type, qty, **kwargs):
         self.side = side.title()
         self.symbol = symbol
         self.order_type = order_type
         self.qty = qty
-        self.price = price
         self.reduce_only = 'false'
         self.close_on_trigger = 'false'
         self.time_in_force = 'GTC'
         self.take_profit = None
         self.stop_loss = None
         self.category = 'linear'
+        self.price = kwargs.get('price')
+        self.account = kwargs.get('account', None)
 
         for key,val in kwargs.items():
             setattr(self, key, val)
@@ -30,11 +31,11 @@ class Order:
         return f"[{self.side.upper()}] {self.order_type} Order:  {self.qty} {self.symbol} @ {self.price}"
 
     def as_dict(self):
-        return {
+        d = {
             "side":self.side,
             "symbol":self.symbol,
             # "orderType":self.order_type,
-            "type":"Limit",
+            "type":self.order_type.upper(),
             "side":self.side,
             "qty": str(round(self.qty, 7)),
             "price":self.price,
@@ -45,3 +46,6 @@ class Order:
             # "takeProfit": self.take_profit,
             # "stopLoss": self.stop_loss,
         }
+        for key,val in d.items():
+            logging.info(f"{key}: {val}")
+        return d

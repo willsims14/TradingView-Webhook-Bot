@@ -9,11 +9,19 @@ import pprint
 class Wallet:
 
     ENDPOINT = 'https://api-testnet.bybit.com'
-    BYBIT_API_KEY = os.environ['BYBIT_API_KEY']
-    BYBIT_API_SECRET = os.environ['BYBIT_API_SECRET']
 
-    def __init__(self):
+    def __init__(self, risk_level:float, sub_acct:int=None):
         """Constructor"""
+
+        if sub_acct:
+            sub_acct_env_var_prefix = f"SUB_{sub_acct}"
+            self.BYBIT_API_KEY = os.environ[f'SUB_{sub_acct}_BYBIT_API_KEY']
+            self.BYBIT_API_SECRET = os.environ[f'SUB_{sub_acct}_BYBIT_API_SECRET']
+        else:
+            self.BYBIT_API_KEY = os.environ['BYBIT_API_KEY']
+            self.BYBIT_API_SECRET = os.environ['BYBIT_API_SECRET']
+
+        self.risk_level = risk_level
 
         self.session = spot.HTTP(
             endpoint=self.ENDPOINT,
@@ -27,34 +35,35 @@ class Wallet:
             ping_interval=10,  # the default is 30
             ping_timeout=5,  # the default is 10
         )
-        # for x in dir(self.session):
-        #     print(x)
-
 
     def get_available_balance(self, symbol):
         response = self.session.get_wallet_balance()
         for coin in response['result']['balances']:
             if coin['coin'] == symbol:
+                logging.info(f"{symbol} Balance: {coin['free']}")
                 return float(coin['free'])
         return response['result']['balances']
 
-    def calculate_order_qty(self, symbol, symbol_price):
+    def calculate_buy_order_qty(self, symbol, symbol_price):
         if symbol == 'BTCUSDT':
-            balance = self.get_available_balance('USDT')
-            logging.info(f'USDT Balance: {balance}')
-            amount_to_spend = balance * 0.01
-            qty = round(amount_to_spend / symbol_price, 6)
-            logging.info(f'1% of USDT Balance: {qty}')
+            available_usdt = self.get_available_balance('USDT')
+
+            # amount_to_spend = (availalbe_usdt * 0.10)
+            # qty = round(amount_to_spend / symbol_price, 6)
+            qty = round((available_usdt * self.risk_level) / symbol_price, 6)
+
+            logging.info(f'Calculated Qty (Risk: {self.risk_level}): {qty}')
             return qty
 
     def submit_order(self, order):
-        try:
-            response = self.session.place_active_order(**order)
-            logging.info(response)
-            logging.info('  * ORDER PLACED *')
-            return response
-        except Exception as e:
-            logging.error(e)
+        # try:
+        response = self.session.place_active_order(**order)
+        logging.info(response)
+        logging.info('  * ORDER PLACED *')
+        logging.info
+        return response
+        # except Exception as e:
+        #     logging.error(e)
 
     def get_active_orders(self, symbol):
         return self.session.get_active_order(symbol=symbol)
@@ -68,12 +77,12 @@ class Wallet:
             print(string)
             logging.info(string)
 
-    def get_position(self):
-        return self.session.my_position(category='linear', symbol='BTCUSDT')
+    def get_position(self, symbol, category="linear"):
+        return self.session.my_position(category=category, symbol=symbol)
 
 
-    def stream_orderbook(self,):
-        self.ws_session.orderbook_25_stream(self.handle_orderbook, 'BTCUSDT')
+    def stream_orderbook(self, symbol):
+        self.ws_session.orderbook_25_stream(self.handle_orderbook, symbol)
         # return x
 
     def handle_orderbook(self, message):
