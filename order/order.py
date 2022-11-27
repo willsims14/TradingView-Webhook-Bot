@@ -24,7 +24,7 @@ class Order:
         self.price = kwargs.get('price')
         self.account = kwargs.get('account', None)
 
-        for key,val in kwargs.items():
+        for key, val in kwargs.items():
             setattr(self, key, val)
 
     def __str__(self):
@@ -32,20 +32,19 @@ class Order:
 
     def as_dict(self):
         d = {
-            "side":self.side,
-            "symbol":self.symbol,
-            # "orderType":self.order_type,
-            "type":self.order_type.upper(),
-            "side":self.side,
+            "side": self.side,
+            "symbol": self.symbol,
+            # "orderType": self.order_type,
+            "type": self.order_type.upper(),
             "qty": str(round(self.qty, 7)),
-            "price":self.price,
-            "reduceOnly":self.reduce_only,
-            "closeOnTrigger":self.close_on_trigger,
-            "timeInForce":self.time_in_force,
+            "price": self.price,
+            "reduceOnly": self.reduce_only,
+            "closeOnTrigger": self.close_on_trigger,
+            "timeInForce": self.time_in_force,
             "category": self.category,
-            # "takeProfit": self.take_profit,
-            # "stopLoss": self.stop_loss,
+            # "takeProfit":  self.take_profit,
+            # "stopLoss":  self.stop_loss,
         }
-        for key,val in d.items():
+        for key, val in d.items():
             logging.info(f"{key}: {val}")
         return d

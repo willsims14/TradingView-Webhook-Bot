@@ -19,14 +19,14 @@ logging.basicConfig(filename="main.log", level=logging.DEBUG,
 
 app = Flask(__name__)
 
-RISK_LEVEL = 0.10
+RISK_LEVEL = 0.20
 
 
 WALLETS = {
     0: Wallet(risk_level=RISK_LEVEL),
-    1: Wallet(risk_level=RISK_LEVEL,sub_acct=1),
-    2: Wallet(risk_level=RISK_LEVEL,sub_acct=2),
-    3: Wallet(risk_level=RISK_LEVEL,sub_acct=3),
+    1: Wallet(risk_level=RISK_LEVEL, sub_acct=1),
+    2: Wallet(risk_level=RISK_LEVEL, sub_acct=2),
+    3: Wallet(risk_level=RISK_LEVEL, sub_acct=3),
 }
 
 
@@ -37,38 +37,35 @@ def get_timestamp():
 
 @app.route("/webhook", methods=["POST", "GET"])
 def webhook():
-    logging.info('------------ New Webhook Alert ------------')
+    logging.info(f'------------ New Webhook Alert ------------\n{request.data}')
     # try:
-    logging.info(f'[DEBUGGING] Request received: {request.data}')
     if request.method == "POST":
         data = request.get_json()
-        logging.info(f'[DEBUGGING] Request received: {data}')
         if data is None:
-            logging.info(f'[DEBUGGING]  !!  BAD JSON  !! ')
+            logging.info('[DEBUGGING]  !!  BAD JSON  !! ')
+            return "Bad JSON", 400
+
         key = data["key"]
-        if key == config.sec_key:
-
-            logging.info(f'Sub Account #{data["account"]}')
-            wallet = WALLETS[int(data["account"])]
-
-            data['qty'] = wallet.calculate_buy_order_qty(data['symbol'], data['price'])
-
-            # TODO: Refactor - remove class. Simply return a dict with the values I want
-            o = Order(**data)
-            wallet.submit_order(o.as_dict())
-            logging.info(o)
-            logging.info('')
-            logging.info('\n\n')
-            alert_handler.send_alert(data)
-            return "Sent alert", 200
-        else:
+        if key != config.sec_key:
             logging.info("[X] Alert Received & Refused! (Wrong Key)")
             return "Refused alert", 400
-    else:
-        with open('main.log') as f:
-            data = f.read()
-        s = f"<h1>LOG</h1><div>{data}</div>"
-        return [_ for _ in s], 200
+
+        wallet = WALLETS[int(data["account"])]
+        if data['side'].lower() == 'buy' and data['order_type'].lower() == 'market':
+            available_bal = wallet.get_available_balance('USDT')
+            data['qty'] = (available_bal * RISK_LEVEL)
+        else:
+            data['qty'] = wallet.calculate_buy_order_qty(data['side'], data['symbol'], data['price'])
+
+        # TODO: Refactor - remove class. Simply return a dict with the values I want
+        o = Order(**data)
+        wallet.submit_order(o.as_dict())
+        logging.info(o)
+        logging.info('')
+        logging.info('\n\n')
+        alert_handler.send_alert(data)
+        return "Sent alert", 200
+
     # except Exception as e:
     #     logging.error(e)
     #     return "Error", 400

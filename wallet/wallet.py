@@ -1,20 +1,20 @@
 import os
 
-from pybit import inverse_perpetual
-from pybit import usdt_perpetual
+# from pybit import inverse_perpetual
+# from pybit import usdt_perpetual
 from pybit import spot
 import logging
 import pprint
+
 
 class Wallet:
 
     ENDPOINT = 'https://api-testnet.bybit.com'
 
-    def __init__(self, risk_level:float, sub_acct:int=None):
+    def __init__(self, risk_level: float, sub_acct: int = None):
         """Constructor"""
 
         if sub_acct:
-            sub_acct_env_var_prefix = f"SUB_{sub_acct}"
             self.BYBIT_API_KEY = os.environ[f'SUB_{sub_acct}_BYBIT_API_KEY']
             self.BYBIT_API_SECRET = os.environ[f'SUB_{sub_acct}_BYBIT_API_SECRET']
         else:
@@ -44,8 +44,9 @@ class Wallet:
                 return float(coin['free'])
         return response['result']['balances']
 
-    def calculate_buy_order_qty(self, symbol, symbol_price):
-        if symbol == 'BTCUSDT':
+    def calculate_buy_order_qty(self, side, symbol, symbol_price):
+        # if symbol == 'BTCUSDT':
+        if side.lower() == "buy":
             available_usdt = self.get_available_balance('USDT')
 
             # amount_to_spend = (availalbe_usdt * 0.10)
@@ -54,6 +55,8 @@ class Wallet:
 
             logging.info(f'Calculated Qty (Risk: {self.risk_level}): {qty}')
             return qty
+        else:
+            return self.get_available_balance('BTC')
 
     def submit_order(self, order):
         # try:
@@ -79,13 +82,3 @@ class Wallet:
 
     def get_position(self, symbol, category="linear"):
         return self.session.my_position(category=category, symbol=symbol)
-
-
-    def stream_orderbook(self, symbol):
-        self.ws_session.orderbook_25_stream(self.handle_orderbook, symbol)
-        # return x
-
-    def handle_orderbook(self, message):
-
-        print(message)
-        orderbook_data = message["data"]
