@@ -42,13 +42,14 @@ class Wallet:
             if coin['coin'] == symbol:
                 logging.info(f"{symbol} Balance: {coin['free']}")
                 return float(coin['free'])
-        return response['result']['balances']
+        return 0.0
 
     def calculate_buy_order_qty(self, side, symbol, symbol_price):
         # if symbol == 'BTCUSDT':
         if side.lower() == "buy":
             available_usdt = self.get_available_balance('USDT')
-
+            if available_usdt < 25.0:
+                return None
             # amount_to_spend = (availalbe_usdt * 0.10)
             # qty = round(amount_to_spend / symbol_price, 6)
             qty = round((available_usdt * self.risk_level) / symbol_price, 6)

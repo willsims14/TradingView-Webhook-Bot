@@ -36,7 +36,7 @@ class Order:
             "symbol": self.symbol,
             # "orderType": self.order_type,
             "type": self.order_type.upper(),
-            "qty": str(round(self.qty, 7)),
+            "qty": str(self.qty),
             "price": self.price,
             "reduceOnly": self.reduce_only,
             "closeOnTrigger": self.close_on_trigger,

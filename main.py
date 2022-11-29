@@ -1,9 +1,3 @@
-# ----------------------------------------------- #
-# Plugin Name           : TradingView-Webhook-Bot #
-# Author Name           : fabston                 #
-# File Name             : main.py                 #
-# ----------------------------------------------- #
-
 import logging
 import time
 
@@ -19,7 +13,7 @@ logging.basicConfig(filename="main.log", level=logging.DEBUG,
 
 app = Flask(__name__)
 
-RISK_LEVEL = 0.20
+RISK_LEVEL = 0.50
 
 
 WALLETS = {
@@ -35,27 +29,27 @@ def get_timestamp():
     return str(timestamp)
 
 
-@app.route("/webhook", methods=["POST", "GET"])
+@app.route("/webhook", methods=["POST"])
 def webhook():
     logging.info(f'------------ New Webhook Alert ------------\n{request.data}')
     # try:
     if request.method == "POST":
         data = request.get_json()
-        if data is None:
+        if not data:
             logging.info('[DEBUGGING]  !!  BAD JSON  !! ')
             return "Bad JSON", 400
-
-        key = data["key"]
-        if key != config.sec_key:
-            logging.info("[X] Alert Received & Refused! (Wrong Key)")
-            return "Refused alert", 400
 
         wallet = WALLETS[int(data["account"])]
         if data['side'].lower() == 'buy' and data['order_type'].lower() == 'market':
             available_bal = wallet.get_available_balance('USDT')
-            data['qty'] = (available_bal * RISK_LEVEL)
+            data['qty'] = round(available_bal * RISK_LEVEL, 6)
         else:
             data['qty'] = wallet.calculate_buy_order_qty(data['side'], data['symbol'], data['price'])
+
+        if not data['qty']:
+            logging.info("Insufficient Balance")
+            logging.info(data)
+            return "Insufficient Balance", 400
 
         # TODO: Refactor - remove class. Simply return a dict with the values I want
         o = Order(**data)
