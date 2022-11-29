@@ -30,39 +30,67 @@ def get_timestamp():
 
 
 @app.route("/webhook", methods=["POST"])
-def webhook():
-    logging.info(f'------------ New Webhook Alert ------------\n{request.data}')
-    # try:
-    if request.method == "POST":
-        data = request.get_json()
-        if not data:
-            logging.info('[DEBUGGING]  !!  BAD JSON  !! ')
-            return "Bad JSON", 400
+def validate_request():
+    logging.info(f'------------ New Request ------------\n{request.data}')
+    if request.method != "POST":
+        return f"Method {request.method} not allowed at this endpoint", 400
 
-        wallet = WALLETS[int(data["account"])]
-        if data['side'].lower() == 'buy' and data['order_type'].lower() == 'market':
-            available_bal = wallet.get_available_balance('USDT')
-            data['qty'] = round(available_bal * RISK_LEVEL, 6)
-        else:
-            data['qty'] = wallet.calculate_buy_order_qty(data['side'], data['symbol'], data['price'])
+    data = request.get_json()
+    if not data:
+        logging.info('[DEBUGGING]  !!  BAD JSON  !! ')
+        return "Bad JSON", 400
 
-        if not data['qty']:
-            logging.info("Insufficient Balance")
-            logging.info(data)
-            return "Insufficient Balance", 400
+    wallet = WALLETS[int(data["account"])]
 
-        # TODO: Refactor - remove class. Simply return a dict with the values I want
-        o = Order(**data)
-        wallet.submit_order(o.as_dict())
-        logging.info(o)
-        logging.info('')
-        logging.info('\n\n')
-        alert_handler.send_alert(data)
-        return "Sent alert", 200
+    if data['side'].lower() == 'buy':
+        return buy(wallet, data)
+    elif data['side'].lower() == 'sell':
+        return sell(wallet, data)
 
-    # except Exception as e:
-    #     logging.error(e)
-    #     return "Error", 400
+
+# @app.route("/webhook-buy", methods=["POST"])
+def buy(wallet, data):
+    """ BUY """
+
+    if data['order_type'].lower() == 'market':
+        available_bal = wallet.get_available_balance('USDT')
+        data['qty'] = round(available_bal * RISK_LEVEL, 6)
+    else:
+        data['qty'] = wallet.calculate_buy_order_qty(data['side'], data['symbol'], data['price'])
+
+    if not data['qty']:
+        logging.info("Insufficient Balance")
+        logging.info(data)
+        return "Insufficient Balance", 400
+
+    # TODO: Refactor - remove class. Simply return a dict with the values I want
+    o = Order(**data)
+    wallet.submit_order(o.as_dict())
+    logging.info(o)
+    logging.info('')
+    logging.info('\n\n')
+    alert_handler.send_alert(data)
+    return "Sent alert", 200
+
+
+def sell(wallet, data):
+    logging.info(f'------------ SELL ------------\n{request.data}')
+
+    data['qty'] = wallet.calculate_sell_order_qty(data['side'], data['symbol'], data['price'])
+
+    if not data['qty']:
+        logging.info("Insufficient Balance")
+        logging.info(data)
+        return "Insufficient Balance", 400
+
+    # TODO: Refactor - remove class. Simply return a dict with the values I want
+    o = Order(**data)
+    wallet.submit_order(o.as_dict())
+    logging.info(o)
+    logging.info('')
+    logging.info('\n\n')
+    alert_handler.send_alert(data)
+    return "Sent alert", 200
 
 
 if __name__ == "__main__":

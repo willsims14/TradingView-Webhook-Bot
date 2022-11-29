@@ -45,19 +45,19 @@ class Wallet:
         return 0.0
 
     def calculate_buy_order_qty(self, side, symbol, symbol_price):
-        # if symbol == 'BTCUSDT':
+
         if side.lower() == "buy":
             available_usdt = self.get_available_balance('USDT')
             if available_usdt < 25.0:
                 return None
-            # amount_to_spend = (availalbe_usdt * 0.10)
-            # qty = round(amount_to_spend / symbol_price, 6)
+
             qty = round((available_usdt * self.risk_level) / symbol_price, 6)
 
             logging.info(f'Calculated Qty (Risk: {self.risk_level}): {qty}')
             return qty
-        else:
-            return self.get_available_balance('BTC')
+
+    def calculate_sell_order_qty(self, side, symbol, symbol_price):
+        return self.get_available_balance('BTC')
 
     def submit_order(self, order):
         # try:
