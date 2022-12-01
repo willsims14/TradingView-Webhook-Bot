@@ -17,7 +17,7 @@ class Order:
         self.qty = qty
         self.reduce_only = 'false'
         self.close_on_trigger = 'false'
-        self.time_in_force = 'GTC'
+        self.time_in_force = 'IOC'
         self.take_profit = None
         self.stop_loss = None
         self.category = 'linear'
