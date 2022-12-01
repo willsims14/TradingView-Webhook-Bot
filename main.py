@@ -17,7 +17,7 @@ RISK_LEVEL = 0.50
 
 
 WALLETS = {
-    0: Wallet(risk_level=RISK_LEVEL),
+    # 0: Wallet(risk_level=RISK_LEVEL),
     1: Wallet(risk_level=RISK_LEVEL, sub_acct=1),
     2: Wallet(risk_level=RISK_LEVEL, sub_acct=2),
     3: Wallet(risk_level=RISK_LEVEL, sub_acct=3),
@@ -48,7 +48,6 @@ def validate_request():
         return sell(wallet, data)
 
 
-# @app.route("/webhook-buy", methods=["POST"])
 def buy(wallet, data):
     """ BUY """
 
@@ -94,5 +93,7 @@ def sell(wallet, data):
 
 
 if __name__ == "__main__":
-    from waitress import serve
-    serve(app, host="0.0.0.0", port=8080)
+    # from waitress import serve
+    # serve(app, host="0.0.0.0", port=8080)
+    # serve(app)
+    app.run(debug=True)
