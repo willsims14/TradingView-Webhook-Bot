@@ -11,7 +11,7 @@ class Wallet:
 
     ENDPOINT = 'https://api-testnet.bybit.com'
 
-    def __init__(self, risk_level: float, sub_acct: int = None):
+    def __init__(self, sub_acct: int = None):
         """Constructor"""
 
         if sub_acct:
@@ -20,8 +20,6 @@ class Wallet:
         else:
             self.BYBIT_API_KEY = os.environ['BYBIT_API_KEY']
             self.BYBIT_API_SECRET = os.environ['BYBIT_API_SECRET']
-
-        self.risk_level = risk_level
 
         self.session = spot.HTTP(
             endpoint=self.ENDPOINT,
@@ -43,21 +41,6 @@ class Wallet:
                 logging.info(f"{symbol} Balance: {coin['free']}")
                 return float(coin['free'])
         return 0.0
-
-    def calculate_buy_order_qty(self, side, symbol, symbol_price):
-
-        if side.lower() == "buy":
-            available_usdt = self.get_available_balance('USDT')
-            if available_usdt < 25.0:
-                return None
-
-            qty = round((available_usdt * self.risk_level) / symbol_price, 6)
-
-            logging.info(f'Calculated Qty (Risk: {self.risk_level}): {qty}')
-            return qty
-
-    def calculate_sell_order_qty(self, side, symbol, symbol_price):
-        return self.get_available_balance('BTC')
 
     def submit_order(self, order):
         # try:

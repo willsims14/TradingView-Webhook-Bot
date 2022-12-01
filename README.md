@@ -27,16 +27,12 @@ The **TradingView Webhook Bot** ⚙️ listens to [TradingView](https://tradingv
 All alerts can be instantly sent to Telegram, Discord, Twitter and/or Email.
 
 ## Features
-- Telegram Support using the [Python Telegram](https://github.com/python-telegram-bot/python-telegram-bot) libary
 - Discord Support using [webhooks](https://support.discord.com/hc/de/articles/228383668-Webhooks-verwenden)
-- Slack Support using [webhooks](https://api.slack.com/messaging/webhooks)
-- Twitter Support using the [tweepy](https://github.com/tweepy/tweepy) libary
-- Email Support using [smtplib](https://docs.python.org/3/library/smtplib.html)
-- Alert channels can be enabled or disabled in [`config.py`](https://github.com/fabston/TradingView-Webhook-Bot/blob/master/config.py)
 - Dynamically send alerts to different Telegram and/or Discord channels
 - TradingView `{{close}}`, `{{exchange}}` etc. variables support. Read more [here](https://www.tradingview.com/blog/en/introducing-variables-in-alerts-14880/)
+- ByBit Functionality
 
-> 💡 Got a feature idea? Open an [issue](https://github.com/fabston/TradingView-Webhook-Bot/issues/new?assignees=&labels=enhancement&template=feature-request---.md) and I might implement it.
+
 
 ## Installation
 > ⚠️ Best to run the bot on a VPS. I can recommend <a href="https://hetzner.cloud/?ref=tQ1NdT8zbfNY" title="Get €20 in cloud credits">Hetzner</a>'s CX11 VPS for 2.89€/month. [Sign up](https://hetzner.cloud/?ref=tQ1NdT8zbfNY) now and receive **€20 free** credits.
@@ -64,16 +60,17 @@ All alerts can be instantly sent to Telegram, Discord, Twitter and/or Email.
 1. Run the bot with `python main.py`
 1. [PM2](https://github.com/fabston/TradingView-Webhook-Bot/issues/28#issuecomment-766301062) can help you in running the app in the background / on system boot.
 
-### Docker
-1. Clone this repository `git clone https://github.com/fabston/TradingView-Webhook-Bot.git`
-1. Edit and update [`config.py`](https://github.com/fabston/TradingView-Webhook-Bot/blob/master/config.py)
-1. `docker-compose build`
-1. `docker-compose up`
+
 
 ### Guincorn
 
 ```
-    gunicorn -w 3 main:app --reload
+gunicorn -w 3 main:app --reload
+```
+
+### Stop Apache2
+```
+sudo systemctl stop apache2
 ```
 
 *It is recommended to run flask on a different port like 8080. It is then necessary to forward port 80 to 8080.*

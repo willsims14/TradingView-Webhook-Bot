@@ -1,99 +1,92 @@
-import logging
-import time
 
 from flask import Flask, request
 
-import config
-import alert_handler
-from order.order import Order
+import logging
+import time
+
 from wallet.wallet import Wallet
+import alert_handler
+import config
 
 logging.basicConfig(filename="main.log", level=logging.DEBUG,
                     format="%(asctime)s %(levelname)s %(message)s")
 
 app = Flask(__name__)
 
-RISK_LEVEL = 0.50
-
 
 WALLETS = {
-    # 0: Wallet(risk_level=RISK_LEVEL),
-    1: Wallet(risk_level=RISK_LEVEL, sub_acct=1),
-    2: Wallet(risk_level=RISK_LEVEL, sub_acct=2),
-    3: Wallet(risk_level=RISK_LEVEL, sub_acct=3),
+    0: Wallet(),
+    1: Wallet(sub_acct=1),
+    2: Wallet(sub_acct=2),
+    3: Wallet(sub_acct=3),
 }
 
 
+@app.route("/webhook", methods=["POST"])
+def validate_request():
+    """Entrypoint"""
+
+    logging.info(f'------------ New Request ------------\n{request.data}')
+    data = request.get_json()
+    wallet = WALLETS[int(data["account"])]
+
+    if data['side'].lower() == 'buy':
+        result = buy(wallet, data)
+    elif data['side'].lower() == 'sell':
+        result = sell(wallet, data)
+    alert_handler.send_alert(data)
+    logging.info('')
+    logging.info('\n\n')
+    return result
+
+
+def buy(wallet, data):
+    """Execute ByBit BUY Order"""
+
+    available_bal = wallet.get_available_balance(config.BYBIT_SYMBOL_STABLE_COIN)
+    if data['type'].lower() == 'market':
+        data['qty'] = round(available_bal * config.BYBIT_RISK_LEVEL, 6)
+    else:
+        if available_bal < 25.0:
+            logging.info('Balance < 25 USDT - Ignoring')
+            return "Insufficient Balance", 400
+        data['qty'] = round((available_bal * config.BYBIT_RISK_LEVEL) / data['price'], 6)
+
+    o = add_constants(data)
+    logging.info(o)
+    wallet.submit_order(o)
+    return "Sent alert", 200
+
+
+def sell(wallet, data):
+    """Execute ByBit SELL Order"""
+
+    data['qty'] = wallet.get_available_balance(config.BYBIT_SYMBOL_TO_TRADE)
+    o = add_constants(data)
+    logging.info(o)
+    wallet.submit_order(o)
+    return "Sent alert", 200
+
+
+# Helper Methods
 def get_timestamp():
     timestamp = time.strftime("%Y-%m-%d %X")
     return str(timestamp)
 
 
-@app.route("/webhook", methods=["POST"])
-def validate_request():
-    logging.info(f'------------ New Request ------------\n{request.data}')
-    if request.method != "POST":
-        return f"Method {request.method} not allowed at this endpoint", 400
+def add_constants(data):
+    """Add constants to ByBit API Call"""
 
-    data = request.get_json()
-    if not data:
-        logging.info('[DEBUGGING]  !!  BAD JSON  !! ')
-        return "Bad JSON", 400
+    data['reduce_only'] = config.BYBIT_REDUCE_ONLY
+    data['close_on_trigger'] = config.BYBIT_CLOSE_ON_TRIGGER
+    data['time_in_force'] = config.BYBIT_TIME_IN_FORCE
+    data['take_profit'] = config.BYBIT_TAKE_PROFIT
+    data['stop_loss'] = config.BYBIT_STOP_LOSS
+    data['category'] = config.BYBIT_CATEGORY
+    data['symbol'] = config.BYBIT_SYMBOL
 
-    wallet = WALLETS[int(data["account"])]
-
-    if data['side'].lower() == 'buy':
-        return buy(wallet, data)
-    elif data['side'].lower() == 'sell':
-        return sell(wallet, data)
-
-
-def buy(wallet, data):
-    """ BUY """
-
-    if data['order_type'].lower() == 'market':
-        available_bal = wallet.get_available_balance('USDT')
-        data['qty'] = round(available_bal * RISK_LEVEL, 6)
-    else:
-        data['qty'] = wallet.calculate_buy_order_qty(data['side'], data['symbol'], data['price'])
-
-    if not data['qty']:
-        logging.info("Insufficient Balance")
-        logging.info(data)
-        return "Insufficient Balance", 400
-
-    # TODO: Refactor - remove class. Simply return a dict with the values I want
-    o = Order(**data)
-    wallet.submit_order(o.as_dict())
-    logging.info(o)
-    logging.info('')
-    logging.info('\n\n')
-    alert_handler.send_alert(data)
-    return "Sent alert", 200
-
-
-def sell(wallet, data):
-    logging.info(f'------------ SELL ------------\n{request.data}')
-
-    data['qty'] = wallet.calculate_sell_order_qty(data['side'], data['symbol'], data['price'])
-
-    if not data['qty']:
-        logging.info("Insufficient Balance")
-        logging.info(data)
-        return "Insufficient Balance", 400
-
-    # TODO: Refactor - remove class. Simply return a dict with the values I want
-    o = Order(**data)
-    wallet.submit_order(o.as_dict())
-    logging.info(o)
-    logging.info('')
-    logging.info('\n\n')
-    alert_handler.send_alert(data)
-    return "Sent alert", 200
+    return {k: v for k, v in data.items() if k in config.BYBIT_SUBMIT_ORDER_FIELDS}
 
 
 if __name__ == "__main__":
-    # from waitress import serve
-    # serve(app, host="0.0.0.0", port=8080)
-    # serve(app)
     app.run(debug=True)
