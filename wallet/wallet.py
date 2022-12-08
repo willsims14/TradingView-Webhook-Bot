@@ -36,6 +36,7 @@ class Wallet:
 
     def get_available_balance(self, symbol):
         response = self.session.get_wallet_balance()
+        logging.info(f"Balance Response: {response}")
         for coin in response['result']['balances']:
             if coin['coin'] == symbol:
                 logging.info(f"{symbol} Balance: {coin['free']}")
