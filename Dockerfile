@@ -16,4 +16,5 @@ COPY wallet/ wallet/
 EXPOSE 80
 
 # ENTRYPOINT [ "python", "main.py" ]
-CMD ["gunicorn", "-w 3", "main:app", "--reload"]
+# CMD ["gunicorn", "-w 3", "main:app", "--reload"]
+CMD [ "python3", "-m" , "flask", "run", "--host=0.0.0.0"]
