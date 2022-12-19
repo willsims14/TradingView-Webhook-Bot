@@ -9,22 +9,34 @@ import ssl
 from email.mime.text import MIMEText
 
 from discord_webhook import DiscordEmbed, DiscordWebhook
-from telegram import Bot
 
 import config
-import logging
+# import logging
 
 
 def send_alert(data):
     msg = data["msg"].encode("latin-1", "backslashreplace").decode("unicode_escape")
-    logging.info(msg)
+    # msg = f"{data['side']} {data['qty']} {data['symbol']} @ ${data['price']}"
+    # msg = 'New Trade Executed'
+
+    # logging.info(msg)
+    desc = ""
+    for key, val in data.items():
+        if key == 'response':
+            desc += "**Response**\n"
+            for k, v in val.items():
+
+                if k not in ('last_exec_price', 'cum_exec_qty', 'cum_exec_value', 'cum_exec_fee', 'transactTime'):
+                    desc += f"      * **{k}**: `{v}`\n"
+        elif key not in ('discord', 'msg', 'ticker', 'category'):
+            desc += f"**{key}**: `{val}`\n"
 
     if config.send_discord_alerts:
         try:
             webhook = DiscordWebhook(
                 url="https://discord.com/api/webhooks/" + data["discord"]
             )
-            embed = DiscordEmbed(title=msg)
+            embed = DiscordEmbed(title=msg, description=desc, color='03b2f8')
             webhook.add_embed(embed)
             webhook.execute()
         except KeyError:
